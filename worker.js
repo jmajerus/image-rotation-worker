@@ -10,7 +10,8 @@ const cacheTTL = 86400;  // Cache for 1 day
 
 async function fetchFlickrImages(env) {
     const cache = caches.default;
-    const cacheKey = 'flickr_image_list';
+    const cacheKey = new URL(request.url);  // Use full URL for caching
+
     let response = await cache.match(cacheKey);
 
     if (response) {
