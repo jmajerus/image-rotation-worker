@@ -48,7 +48,13 @@ async function handleRequest(env) {
     const randomImage = images[Math.floor(Math.random() * images.length)];
 
     return new Response(JSON.stringify({ image: randomImage }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',  // Allow any origin to fetch
+            'Access-Control-Allow-Methods': 'GET',  // Allow GET requests
+            'Access-Control-Allow-Headers': 'Content-Type'
+        }
+
     });
 }
 
