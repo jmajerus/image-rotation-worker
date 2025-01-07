@@ -17,8 +17,7 @@ async function handleRequest(env, request) {
     });
 }
 
-const MAX_IMAGES = 10;
-const cacheTTL = 86400;
+const cacheTTL = 86400;  // 1-day cache TTL
 
 async function fetchFlickrImages(env, request) {
     const cache = caches.default;
@@ -40,17 +39,19 @@ async function fetchFlickrImages(env, request) {
 
     try {
         response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch Flickr album.');
+        const text = await response.text();
+        const data = JSON.parse(text);
 
-        const data = await response.json();
-        console.log("Flickr API Response:", data);
+        if (data.stat !== 'ok' || !data.photoset || !data.photoset.photo) {
+            throw new Error('Failed to retrieve photoset.');
+        }
 
-        const imageUrls = (data.photoset && data.photoset.photo)
-            ? data.photoset.photo.map(photo =>
-                `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
-            )
-            : [];
+        // Construct image URLs
+        const imageUrls = data.photoset.photo.map(photo => 
+            `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
+        );
 
+        // Cache the response
         response = new Response(JSON.stringify(imageUrls), {
             headers: { 'Content-Type': 'application/json' }
         });
@@ -59,7 +60,7 @@ async function fetchFlickrImages(env, request) {
 
         return imageUrls.length > 0 ? imageUrls : [env.FALLBACK_IMAGE];
     } catch (error) {
-        console.error('Error fetching Flickr images:', error);
+        console.error('Error fetching Flickr images:', error.message);
         return [env.FALLBACK_IMAGE];
     }
 }
