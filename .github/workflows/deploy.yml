@@ -3,20 +3,21 @@ name: Deploy Worker to Cloudflare
 on:
   push:
     branches:
-      - main  # Deploy when pushing to main branch
+      - main  # Deploys only when pushing to the main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3  # Pulls the latest code from the repo
 
       - name: Publish to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v3  # Cloudflare's official Wrangler action
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          environment: production
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          environment: production  # Deploy to the production environment
         env:
           FLICKR_API_KEY: ${{ secrets.FLICKR_API_KEY }}
           FLICKR_USER_ID: ${{ secrets.FLICKR_USER_ID }}
