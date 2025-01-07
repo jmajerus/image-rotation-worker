@@ -1,3 +1,6 @@
 {
-    "git.openRepositoryInParentFolders": "never"
+    "git.openRepositoryInParentFolders": "never",
+    "cloudflareDevTools.api.zoneID": "760804baffbf3cdb28094cab02683ea4",
+    "cloudflareDevTools.api.email": "skyanchor@gmail.com",
+    "cloudflareDevTools.api.key": "f58db72d77bba46f65b87a111341968eb7482"
 }
