@@ -3,6 +3,7 @@ name = "image-rotation"
 account_id = "eec00739050a8a4cbf359a1dedb8cad3"
 workers_dev = true
 compatibility_date = "2023-11-20"
+main = "worker.js" # Entry point
 
 [env.production]
 FALLBACK_IMAGE = "/images/background.jpg"
