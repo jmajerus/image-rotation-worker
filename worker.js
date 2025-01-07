@@ -1,14 +1,28 @@
 export default {
     async fetch(request, env) {
-        return handleRequest(env);
+        return handleRequest(env, request);
     }
 };
+
+// Pass 'request' to sub-functions
+async function handleRequest(env, request) {
+    const images = await fetchFlickrImages(env, request);  // Pass 'request' here
+    const randomImage = images[Math.floor(Math.random() * images.length)];
+
+    return new Response(JSON.stringify({ image: randomImage }), {
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'max-age=3600'
+        }
+    });
+}
 
 const MAX_IMAGES = 10;
 const SAFETY_LIMIT = 20;
 const cacheTTL = 86400;  // Cache for 1 day
 
-async function fetchFlickrImages(env) {
+async function fetchFlickrImages(request, env) {
     const cache = caches.default;
     const cacheKey = new URL(request.url);  // Use full URL for caching
 
