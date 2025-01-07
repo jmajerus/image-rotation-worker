@@ -22,7 +22,7 @@ async function handleRequest(env, request) {
     // Increment the index and loop back if needed
     const newIndex = (currentIndex + 1) % images.length;
     await env.KV_STORE.put('currentIndex', newIndex.toString());
-
+    console.log(imageUrl + ' @index ' + currentIndex)
     return new Response(JSON.stringify({ image: imageUrl }), {
         headers: {
             'Content-Type': 'application/json',
