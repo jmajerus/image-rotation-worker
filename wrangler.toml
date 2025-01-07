@@ -5,6 +5,10 @@ workers_dev = true
 compatibility_date = "2023-11-20"
 main = "worker.js" # Entry point
 
+kv_namespaces = [
+  { binding = "KV_STORE", id = "4ea68035cab04a258a979cc1d02df30f"}
+]
+
 # wrangler.toml (wrangler v3.88.0^)
 [observability.logs]
 enabled = true

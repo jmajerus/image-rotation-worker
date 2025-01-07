@@ -1,8 +1,6 @@
-let currentIndex = 0;  // Track index in worker memory (resets when worker restarts)
-
 export default {
     async fetch(request, env) {
-        return handleRequest(env, request);
+        return handleRequest(env);
     }
 };
 
@@ -15,24 +13,30 @@ async function handleRequest(env, request) {
         });
     }
 
-    // Serve the current image and update index
+    // Retrieve the current index from KV storage
+    let currentIndex = parseInt(await env.KV_STORE.get('currentIndex')) || 0;
+
+    // Serve the current image
     const imageUrl = images[currentIndex];
-    currentIndex = (currentIndex + 1) % images.length;
+
+    // Increment the index and loop back if needed
+    const newIndex = (currentIndex + 1) % images.length;
+    await env.KV_STORE.put('currentIndex', newIndex.toString());
 
     return new Response(JSON.stringify({ image: imageUrl }), {
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Cache-Control': 'no-store'  // Always get fresh image
+            'Cache-Control': 'no-store'
         }
     });
 }
 
-// Cache and fetch the full album
+// Cache the album and fetch it from Flickr
 async function fetchFlickrImages(env) {
     const cache = caches.default;
     const cacheKey = `flickr-album-${env.FLICKR_ALBUM_ID}`;
-    
+
     let response = await cache.match(cacheKey);
     if (response) {
         return await response.json();
@@ -48,7 +52,7 @@ async function fetchFlickrImages(env) {
             `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
         );
 
-        // Cache the photoset for 24 hours
+        // Cache the full album for 24 hours
         response = new Response(JSON.stringify(imageUrls), {
             headers: { 'Content-Type': 'application/json' }
         });
