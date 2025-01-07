@@ -1,0 +1,13 @@
+name = "image-rotation-worker"
+type = "javascript"
+account_id = "your-cloudflare-account-id"
+workers_dev = true
+compatibility_date = "2023-11-20"
+
+[env.production]
+DROPBOX_TOKEN = "YOUR_DROPBOX_ACCESS_TOKEN"
+DROPBOX_FOLDER = "/public-images"
+FALLBACK_IMAGE = "/images/background.jpg"
+
+[site]
+bucket = "./public"  # Deploy static front-end (optional)
