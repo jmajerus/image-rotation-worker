@@ -35,7 +35,7 @@ async function handleRequest(env, request) {
 // Cache the album and fetch it from Flickr
 async function fetchFlickrImages(env) {
     const cache = caches.default;
-    const cacheKey = `flickr-album-${env.FLICKR_ALBUM_ID}`;
+    const cacheKey = new URL(`https://image-rotation-production.jmajerus.workers.dev/flickr-album-${env.FLICKR_ALBUM_ID}`);
 
     let response = await cache.match(cacheKey);
     if (response) {
@@ -52,11 +52,10 @@ async function fetchFlickrImages(env) {
             `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
         );
 
-        // Cache the full album for 24 hours
         response = new Response(JSON.stringify(imageUrls), {
             headers: { 'Content-Type': 'application/json' }
         });
-        response.headers.append('Cache-Control', 'max-age=86400');
+        response.headers.append('Cache-Control', 'max-age=86400');  // Cache for 1 day
         cache.put(cacheKey, response.clone());
 
         return imageUrls;
