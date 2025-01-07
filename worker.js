@@ -4,30 +4,26 @@ export default {
     }
 };
 
-// Pass 'request' to sub-functions
 async function handleRequest(env, request) {
-    const images = await fetchFlickrImages(env, request);  // Fixed parameter order
+    const images = await fetchFlickrImages(env, request);
     const randomImage = images[Math.floor(Math.random() * images.length)];
 
-    return new Response(JSON.stringify({ image: randomImage }), {
+    return new Response(randomImage, {
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'text/plain',  // Return plain URL directly
             'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'max-age=3600'
         }
     });
 }
 
-// Cache parameters
 const MAX_IMAGES = 10;
-const SAFETY_LIMIT = 20;
-const cacheTTL = 86400;  // 1 day
+const cacheTTL = 86400;
 
 async function fetchFlickrImages(env, request) {
     const cache = caches.default;
     let cacheKey;
 
-    // Ensure a valid URL for caching
     try {
         cacheKey = new URL(request.url, request.url);
     } catch (error) {
@@ -47,9 +43,13 @@ async function fetchFlickrImages(env, request) {
         if (!response.ok) throw new Error('Failed to fetch Flickr album.');
 
         const data = await response.json();
-        const imageUrls = data.photoset.photo.map(photo =>
-            `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
-        );
+        console.log("Flickr API Response:", data);
+
+        const imageUrls = (data.photoset && data.photoset.photo)
+            ? data.photoset.photo.map(photo =>
+                `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
+            )
+            : [];
 
         response = new Response(JSON.stringify(imageUrls), {
             headers: { 'Content-Type': 'application/json' }
@@ -63,6 +63,3 @@ async function fetchFlickrImages(env, request) {
         return [env.FALLBACK_IMAGE];
     }
 }
-
-
-
