@@ -7,5 +7,3 @@ compatibility_date = "2023-11-20"
 [env.production]
 FALLBACK_IMAGE = "/images/background.jpg"
 
-[site]
-bucket = "./public"  # Deploy static front-end (optional)
