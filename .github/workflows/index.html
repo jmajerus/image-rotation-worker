@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slideshow with Image Rotation Worker</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: background-image 1.5s ease-in-out;
+            background-image: url('/images/background.jpg');  /* Fallback */
+        }
+    </style>
+</head>
+<body>
+    <script>
+        async function fetchBackgroundImage() {
+            try {
+                const response = await fetch('https://image-rotation.workers.dev/images');
+                const data = await response.json();
+                document.body.style.backgroundImage = `url('${data.image}')`;
+            } catch (error) {
+                console.error('Failed to fetch image rotation worker.');
+            }
+        }
+
+        async function fetchLocalBackgroundImage() {
+            try {
+                const response = await fetch('/images');
+                const data = await response.json();
+                document.body.style.backgroundImage = `url('${data.image}')`;
+            } catch (error) {
+                console.error('Failed to fetch background image.');
+            }
+        }
+
+        fetchLocalBackgroundImage();
+        setInterval(fetchBackgroundImage, 10000);  // Rotate every 10s
+    </script>
+</body>
+</html>
