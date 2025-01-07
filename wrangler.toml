@@ -5,6 +5,10 @@ workers_dev = true
 compatibility_date = "2023-11-20"
 main = "worker.js" # Entry point
 
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
+
 [env.production]
 FALLBACK_IMAGE = "/images/background.jpg"
 
