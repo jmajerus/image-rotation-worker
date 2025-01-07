@@ -1,3 +1,5 @@
+let currentIndex = 0;  // Track index in worker memory (resets when worker restarts)
+
 export default {
     async fetch(request, env) {
         return handleRequest(env, request);
@@ -5,30 +7,32 @@ export default {
 };
 
 async function handleRequest(env, request) {
-    const images = await fetchFlickrImages(env, request);
-    const randomImage = images[Math.floor(Math.random() * images.length)];
+    const images = await fetchFlickrImages(env);
 
-    return new Response(JSON.stringify(randomImage), {
+    if (images.length === 0) {
+        return new Response(JSON.stringify({ image: env.FALLBACK_IMAGE }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+
+    // Serve the current image and update index
+    const imageUrl = images[currentIndex];
+    currentIndex = (currentIndex + 1) % images.length;
+
+    return new Response(JSON.stringify({ image: imageUrl }), {
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Cache-Control': 'max-age=3600'
+            'Cache-Control': 'no-store'  // Always get fresh image
         }
     });
 }
 
-// Fetch Flickr album and return full image metadata
-async function fetchFlickrImages(env, request) {
+// Cache and fetch the full album
+async function fetchFlickrImages(env) {
     const cache = caches.default;
-    let cacheKey;
-
-    try {
-        cacheKey = new URL(request.url, request.url);
-    } catch (error) {
-        console.error("Invalid URL encountered:", error);
-        return [env.FALLBACK_IMAGE];
-    }
-
+    const cacheKey = `flickr-album-${env.FLICKR_ALBUM_ID}`;
+    
     let response = await cache.match(cacheKey);
     if (response) {
         return await response.json();
@@ -38,23 +42,22 @@ async function fetchFlickrImages(env, request) {
 
     try {
         response = await fetch(url);
-        const text = await response.text();
-        const data = JSON.parse(text);
+        const data = await response.json();
 
-        if (data.stat !== 'ok' || !data.photoset || !data.photoset.photo) {
-            throw new Error('Failed to retrieve photoset.');
-        }
+        const imageUrls = data.photoset.photo.map(photo =>
+            `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
+        );
 
-        // Cache the full response
-        response = new Response(JSON.stringify(data.photoset.photo), {
+        // Cache the photoset for 24 hours
+        response = new Response(JSON.stringify(imageUrls), {
             headers: { 'Content-Type': 'application/json' }
         });
-        response.headers.append('Cache-Control', `max-age=86400`);  // Cache for 1 day
+        response.headers.append('Cache-Control', 'max-age=86400');
         cache.put(cacheKey, response.clone());
 
-        return data.photoset.photo.length > 0 ? data.photoset.photo : [{ id: env.FALLBACK_IMAGE }];
+        return imageUrls;
     } catch (error) {
-        console.error('Error fetching Flickr images:', error.message);
-        return [{ id: env.FALLBACK_IMAGE }];
+        console.error('Error fetching Flickr images:', error);
+        return [env.FALLBACK_IMAGE];
     }
 }
