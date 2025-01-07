@@ -21,10 +21,15 @@
         async function fetchBackgroundImage() {
             try {
                 const response = await fetch('https://image-rotation-production.jmajerus.workers.dev/');
-                const data = await response.json();
-                document.body.style.backgroundImage = `url('${data.image}')`;
+                const data = await response.json();  // Full photo object from Flickr
+
+                const imageUrl = `https://live.staticflickr.com/${data.server}/${data.id}_${data.secret}_b.jpg`;
+                document.body.style.backgroundImage = `url('${imageUrl}')`;
+
+                console.log(`Title: ${data.title}`);
+                console.log(`Uploaded by: ${data.owner}`);
             } catch (error) {
-                console.error('Failed to fetch image rotation worker.');
+                console.error('Failed to fetch image rotation worker.', error);
             }
         }
 

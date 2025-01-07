@@ -8,17 +8,16 @@ async function handleRequest(env, request) {
     const images = await fetchFlickrImages(env, request);
     const randomImage = images[Math.floor(Math.random() * images.length)];
 
-    return new Response(randomImage, {
+    return new Response(JSON.stringify(randomImage), {
         headers: {
-            'Content-Type': 'text/plain',  // Return plain URL directly
+            'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'max-age=3600'
         }
     });
 }
 
-const cacheTTL = 86400;  // 1-day cache TTL
-
+// Fetch Flickr album and return full image metadata
 async function fetchFlickrImages(env, request) {
     const cache = caches.default;
     let cacheKey;
@@ -46,21 +45,16 @@ async function fetchFlickrImages(env, request) {
             throw new Error('Failed to retrieve photoset.');
         }
 
-        // Construct image URLs
-        const imageUrls = data.photoset.photo.map(photo => 
-            `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
-        );
-
-        // Cache the response
-        response = new Response(JSON.stringify(imageUrls), {
+        // Cache the full response
+        response = new Response(JSON.stringify(data.photoset.photo), {
             headers: { 'Content-Type': 'application/json' }
         });
-        response.headers.append('Cache-Control', `max-age=${cacheTTL}`);
+        response.headers.append('Cache-Control', `max-age=86400`);  // Cache for 1 day
         cache.put(cacheKey, response.clone());
 
-        return imageUrls.length > 0 ? imageUrls : [env.FALLBACK_IMAGE];
+        return data.photoset.photo.length > 0 ? data.photoset.photo : [{ id: env.FALLBACK_IMAGE }];
     } catch (error) {
         console.error('Error fetching Flickr images:', error.message);
-        return [env.FALLBACK_IMAGE];
+        return [{ id: env.FALLBACK_IMAGE }];
     }
 }
