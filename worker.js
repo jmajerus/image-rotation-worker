@@ -62,7 +62,7 @@ async function fetchFlickrImages(env) {
         });
         response.headers.append('Cache-Control', 'max-age=86400');  // Cache for 1 day
         cache.put(cacheKey, response.clone());
-
+        console.log(imageInfos);
         return imageInfos;
     } catch (error) {
         console.error('Error fetching Flickr images:', error);
