@@ -14,18 +14,39 @@
             transition: background-image 1.5s ease-in-out;
             background-image: url('/images/background.jpg');  /* Fallback */
         }
+        #image-title {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 0.9rem;
+            background-color: rgba(0, 0, 0, 0.4);  /* Semi-transparent black */
+            padding: 5px 10px;
+            border-radius: 3px;
+            max-width: 40%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        body.loaded #image-title {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
+    <div id="image-title">Loading...</div>
+
     <script>
         async function fetchNextImage() {
             try {
                 const response = await fetch('https://image-rotation-production.jmajerus.workers.dev/');
                 const data = await response.json();
-                console.log('Fetched next image: ', data.title);
 
                 if (data.image) {
                     document.body.style.backgroundImage = `url('${data.image}')`;
+                    document.getElementById('image-title').textContent = data.title || 'Untitled';
                 }
             } catch (error) {
                 console.error('Failed to fetch next image:', error);

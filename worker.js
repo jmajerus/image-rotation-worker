@@ -1,6 +1,6 @@
 export default {
     async fetch(request, env) {
-        return handleRequest(env);
+        return handleRequest(env, request);
     }
 };
 
@@ -8,22 +8,24 @@ async function handleRequest(env, request) {
     const images = await fetchFlickrImages(env);
 
     if (images.length === 0) {
-        return new Response(JSON.stringify({ image: env.FALLBACK_IMAGE }), {
+        return new Response(JSON.stringify({
+            image: env.FALLBACK_IMAGE,
+            title: "Fallback Image"
+        }), {
             headers: { 'Content-Type': 'application/json' }
         });
     }
 
-    // Retrieve the current index from KV storage
+    // Get current index from KV Storage
     let currentIndex = parseInt(await env.KV_STORE.get('currentIndex')) || 0;
 
-    // Serve the current image
-    const imageUrl = images[currentIndex];
+    const imageInfo = images[currentIndex];
 
-    // Increment the index and loop back if needed
+    // Increment index and loop
     const newIndex = (currentIndex + 1) % images.length;
     await env.KV_STORE.put('currentIndex', newIndex.toString());
-    console.log(imageUrl + ' @index ' + currentIndex)
-    return new Response(JSON.stringify({ image: imageUrl }), {
+
+    return new Response(JSON.stringify(imageInfo), {
         headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
@@ -32,7 +34,7 @@ async function handleRequest(env, request) {
     });
 }
 
-// Cache the album and fetch it from Flickr
+// Fetch Flickr album and extract image URLs and titles
 async function fetchFlickrImages(env) {
     const cache = caches.default;
     const cacheKey = new URL(`https://image-rotation-production.jmajerus.workers.dev/flickr-album-${env.FLICKR_ALBUM_ID}`);
@@ -48,19 +50,22 @@ async function fetchFlickrImages(env) {
         response = await fetch(url);
         const data = await response.json();
 
-        const imageUrls = data.photoset.photo.map(photo =>
-            `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`
-        );
+        // Map photo data into image URL + title objects
+        const imageInfos = data.photoset.photo.map(photo => ({
+            image: `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`,
+            title: photo.title
+        }));
 
-        response = new Response(JSON.stringify(imageUrls), {
+        // Cache the album with titles
+        response = new Response(JSON.stringify(imageInfos), {
             headers: { 'Content-Type': 'application/json' }
         });
         response.headers.append('Cache-Control', 'max-age=86400');  // Cache for 1 day
         cache.put(cacheKey, response.clone());
 
-        return imageUrls;
+        return imageInfos;
     } catch (error) {
         console.error('Error fetching Flickr images:', error);
-        return [env.FALLBACK_IMAGE];
+        return [{ image: env.FALLBACK_IMAGE, title: "Fallback Image" }];
     }
 }
